@@ -1,68 +1,89 @@
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
-
+const express = require("express");
+const bodyParser = require("body-parser");
+const fs = require("fs");
 const app = express();
-const PORT = 3000;
+const port = 3000;
 
-app.use(express.json());
+// Path to the JSON file that will store user data
+const dataPath = './users.json';
 
-const dataPath = path.join(__dirname, 'users.json');
+// Middleware to parse JSON bodies
+app.use(bodyParser.json());
 
-app.get('/:username', (req, res) => {
+// Ensure the file exists at startup
+if (!fs.existsSync(dataPath)) {
+  fs.writeFileSync(dataPath, JSON.stringify({}));
+}
+
+// Handle GET request to fetch user data by username
+app.get("/:username", (req, res) => {
   const username = req.params.username.toLowerCase();
 
-  fs.readFile(dataPath, 'utf8', (err, data) => {
-    if (err) return res.status(500).json({ error: 'Internal Server Error' });
+  // Read user data from the file
+  fs.readFile(dataPath, "utf8", (err, data) => {
+    if (err) return res.status(500).json({ error: "Internal Server Error" });
 
     const users = JSON.parse(data);
-    if (users[username]) {
-      res.json(users[username]);
-    } else {
-      res.status(404).json({ error: 'User not found' });
+    if (!users[username]) {
+      return res.status(404).json({ error: "User not found" });
     }
+
+    // Send user data
+    res.status(200).json(users[username]);
   });
 });
 
-app.post('/', (req, res) => {
-  const newUser = req.body;
+// Handle POST request to create a new user
+app.post("/:username", (req, res) => {
+  const username = req.params.username.toLowerCase();
+  const userData = req.body;
 
-  fs.readFile(dataPath, 'utf8', (err, data) => {
-    if (err) return res.status(500).json({ error: 'Internal Server Error' });
+  // Read user data from the file
+  fs.readFile(dataPath, "utf8", (err, data) => {
+    if (err) return res.status(500).json({ error: "Internal Server Error" });
 
     const users = JSON.parse(data);
-    if (users[newUser.username.toLowerCase()]) {
-      return res.status(400).json({ error: 'User already exists' });
+    if (users[username]) {
+      return res.status(400).json({ error: "User already exists" });
     }
 
-    users[newUser.username.toLowerCase()] = newUser;
+    // Add the new user
+    users[username] = userData;
+
+    // Save updated user data to the file
     fs.writeFile(dataPath, JSON.stringify(users, null, 2), (writeErr) => {
-      if (writeErr) return res.status(500).json({ error: 'Error saving user data' });
-      res.status(201).json(newUser);
+      if (writeErr) return res.status(500).json({ error: "Error saving user data" });
+      res.status(201).json(users[username]);
     });
   });
 });
 
-app.put('/:username', (req, res) => {
+// Handle PUT request to update user data
+app.put("/:username", (req, res) => {
   const username = req.params.username.toLowerCase();
   const updatedData = req.body;
 
-  fs.readFile(dataPath, 'utf8', (err, data) => {
-    if (err) return res.status(500).json({ error: 'Internal Server Error' });
+  // Read user data from the file
+  fs.readFile(dataPath, "utf8", (err, data) => {
+    if (err) return res.status(500).json({ error: "Internal Server Error" });
 
     const users = JSON.parse(data);
     if (!users[username]) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: "User not found" });
     }
 
+    // Update the user data
     users[username] = { ...users[username], ...updatedData };
+
+    // Save updated user data to the file
     fs.writeFile(dataPath, JSON.stringify(users, null, 2), (writeErr) => {
-      if (writeErr) return res.status(500).json({ error: 'Error saving user data' });
+      if (writeErr) return res.status(500).json({ error: "Error saving user data" });
       res.status(200).json(users[username]);
     });
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port: ${PORT}`);
+// Server setup
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
 });
