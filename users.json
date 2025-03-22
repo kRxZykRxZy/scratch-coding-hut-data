@@ -1,0 +1,14 @@
+{
+  "codinghut": {
+    "id": 1,
+    "username": "codinghut",
+    "email": "codinghut@example.com",
+    "points": 1200
+  },
+  "john_doe": {
+    "id": 2,
+    "username": "someone",
+    "email": "something@example.com",
+    "points": 950
+  }
+}
